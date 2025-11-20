@@ -1,26 +1,19 @@
 #!/bin/bash
-#SBATCH -J miniweather-prof-gpu
-#SBATCH -A <account>
+# profile_cpu.sbatch
+# Example profiling script using perf (or likwid if available) on a single run.
+
+#SBATCH -J miniweather_profile
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=4
-#SBATCH --gpus-per-node=4
-#SBATCH -t 00:10:00
-#SBATCH -o profile-%j.out
+#SBATCH --cpus-per-task=4
+#SBATCH -t 00:15:00
+#SBATCH -A <account>
+#SBATCH -o profile_%j.out
 
-# Profiling template: adapt to available tools (perf/likwid/nsys/nvprof).
-source env/load_modules.sh
-cd $SLURM_SUBMIT_DIR/src
-make gpu
+cd $SLURM_SUBMIT_DIR
+source ../env/load_modules.sh
 
-NX=1024
-NZ=512
-STEPS=100
-OUTPUT=$SLURM_SUBMIT_DIR/results/profile_${SLURM_JOB_ID}.csv
+# Use perf stat as a portable default; replace with likwid-perfctr if available.
+srun perf stat -d ./miniweather_mpi_omp --nx 512 --nz 256 --steps 50 --output ../results/profile_${SLURM_JOB_ID}.csv
 
-# Example using NVIDIA Nsight Systems if available; replace with perf/likwid as needed.
-if command -v nsys &> /dev/null; then
-  srun --mpi=pmix_v3 nsys profile -o $SLURM_SUBMIT_DIR/results/nsys_${SLURM_JOB_ID} \
-    ./miniweather_mpi_cuda --nx ${NX} --nz ${NZ} --steps ${STEPS} --output ${OUTPUT} --gpu
-else
-  srun --mpi=pmix_v3 ./miniweather_mpi_cuda --nx ${NX} --nz ${NZ} --steps ${STEPS} --output ${OUTPUT} --gpu
-fi
+# Store perf output (stdout) in results/profile_cpu_<jobid>.txt if desired.

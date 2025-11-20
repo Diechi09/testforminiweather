@@ -1,47 +1,35 @@
-# miniweather_mpi_omp / miniweather_mpi_cuda
+# src/
 
-This directory contains the hybrid MPI miniWeather-style mini-app and helpers.
+This folder contains the hybrid MPI + OpenMP miniWeather-style mini-application
+and helper scripts.
+
+## Contents
+- `miniweather_mpi_omp.cpp`: main C++ code implementing a 2D
+  advection-diffusion stencil with MPI domain decomposition in the x direction
+  and OpenMP parallelism across the local subdomain.
+- `Makefile`: builds the executable via `make` (override `CXX`/`CXXFLAGS` if
+  needed to match the cluster toolchain).
+- `plot_scaling.py`: convenience script to plot strong/weak scaling results.
 
 ## Building
-
-CPU (MPI + OpenMP):
 ```bash
-module load gcc openmpi  # adjust for your site
 cd src
-make cpu
+module load <compiler> <mpi>   # or use env/load_modules.sh
+make
 ```
+This generates `miniweather_mpi_omp` in the same directory.
 
-GPU (MPI + CUDA, one GPU per MPI rank):
+## Running
+A simple single-node run (two MPI ranks, four threads each) using `srun`:
 ```bash
-module load gcc openmpi cuda  # adjust versions
-cd src
-make gpu
+srun -n 2 --cpus-per-task=4 ./miniweather_mpi_omp --nx 256 --nz 128 --steps 50 --output ../results/example.csv
 ```
+Command-line arguments:
+- `--nx <int>`: global grid size in x (default: 256)
+- `--nz <int>`: global grid size in z (default: 128)
+- `--steps <int>`: number of time steps (default: 100)
+- `--output <path>`: CSV file to append run metadata (default:
+  `results/run_summary.csv` relative to repo root)
 
-The GPU binary is named `miniweather_mpi_cuda`; the CPU binary is
-`miniweather_mpi_omp`. Both use the same source file and CLI.
-
-## Running a quick sanity test
-
-Single node, 1 rank, CPU:
-```bash
-srun -n 1 ./miniweather_mpi_omp --nx 128 --nz 64 --steps 20 --output results/cpu_test.csv
-```
-
-Single node, 1 rank bound to 1 GPU:
-```bash
-srun -n 1 --gpus-per-task=1 ./miniweather_mpi_cuda --nx 128 --nz 64 --steps 20 --output results/gpu_test.csv --gpu
-```
-
-## Command-line arguments
-- `--nx`, `--nz`: global grid dimensions.
-- `--steps`: number of time steps.
-- `--output`: CSV path for summary results.
-- `--gpu` / `--cpu`: select device when the binary was built with CUDA support.
-
-## Notes
-- MPI performs a 1D domain decomposition in the x-dimension; halos are exchanged
-  between left/right neighbors.
-- OpenMP is applied across the local 2D interior for the CPU path.
-- The GPU path uses CUDA for the stencil and stages halo columns through host
-  buffers for MPI exchange (CUDA-aware MPI can replace this staging if available).
+Halo exchange occurs along x between left/right ranks; the code prints a global
+sum every 10 steps to verify correctness and timing information at the end.

@@ -1,0 +1,8 @@
+# Example module list for building/running on Magic Castle / Alliance clusters.
+# Replace these with exact module names/versions available on your site.
+gcc/XX.Y
+openmpi/XX.Y
+cuda/YY.Z
+python/3.X
+matplotlib/3.X  # if matplotlib is packaged as its own module
+likwid/optional-or-perf-tools  # profiling support if available

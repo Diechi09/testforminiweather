@@ -1,15 +1,14 @@
-#!/usr/bin/env bash
-# Helper wrapper to execute commands inside the Apptainer image if present.
-# Also works for GPU builds when the host has NVIDIA drivers and CUDA runtime.
+#!/bin/bash
+# run.sh
+# Convenience wrapper to execute commands inside an Apptainer container. If the
+# image does not exist, build it first using env/project.def.
 
 set -euo pipefail
 
-IMAGE=env/project.sif
-if [[ ! -f ${IMAGE} ]]; then
-  echo "Apptainer image ${IMAGE} not found; build with: apptainer build ${IMAGE} env/project.def"
+if [ ! -f ../env/project.sif ]; then
+    echo "[INFO] env/project.sif not found. Building from env/project.def..."
+    apptainer build ../env/project.sif ../env/project.def
 fi
 
-# Example usage (GPU):
-#   ./run.sh apptainer exec --nv --bind $PWD:$PWD --pwd $PWD env/project.sif srun --gpus-per-task=1 ./miniweather_mpi_cuda --gpu
-
-exec "$@"
+echo "[INFO] Executing inside Apptainer: $@"
+apptainer exec --bind $PWD:$PWD --pwd $PWD ../env/project.sif "$@"

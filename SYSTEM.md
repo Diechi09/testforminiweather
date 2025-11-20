@@ -1,24 +1,27 @@
 # SYSTEM.md
 
-Document the hardware/software configuration for reproducibility.
+Template for documenting the hardware/software environment used in experiments.
+Fill in the details before submitting results.
 
-## Hardware
-- Node type: TODO (e.g., GPU nodes on Magic Castle)
-- CPU: TODO (model, cores per socket, sockets per node)
-- GPU: TODO (e.g., NVIDIA A100, count per node 4/8)
-- Memory: TODO (per node GB)
-- Interconnect: TODO (InfiniBand HDR/NDR or equivalent)
+## Cluster / Node Details
+- Cluster name: Magic Castle (Alliance)
+- Node type(s): TODO (e.g., Intel Xeon Gold 63xx)
+- Cores per node: TODO
+- Memory per node: TODO
+- Interconnect: TODO (e.g., InfiniBand HDR)
 
-## Software
-- Compiler: TODO (gcc/clang + version)
-- MPI: TODO (OpenMPI/MPICH + version)
-- CUDA: TODO (driver + toolkit version)
-- Python/matplotlib: TODO
-- Profilers: TODO (nsys/nvprof/perf/likwid)
+## Software Stack
+- Compiler: TODO (e.g., gcc/11.3)
+- MPI: TODO (e.g., openmpi/4.1)
+- Python: TODO (for plotting)
+- Profiling tools: TODO (perf, likwid)
 
-## Runtime environment
-- OMP_NUM_THREADS: TODO
-- CUDA_VISIBLE_DEVICES: TODO (if manually set)
-- Slurm: mention job submission flags used for scaling and profiling.
+## Environment Variables
+- `OMP_NUM_THREADS`: TODO (e.g., 8)
+- `OMP_PLACES` / `OMP_PROC_BIND`: TODO
+- MPI settings (e.g., `UCX_NET_DEVICES`, `MPICH_GPU_SUPPORT_ENABLED`): TODO
 
-Keep this file updated for every experimental campaign.
+## Notes
+- Mention any deviations from defaults (e.g., non-uniform core binding,
+  hyperthreading on/off).
+- Include Slurm version and relevant scheduler options if noteworthy.

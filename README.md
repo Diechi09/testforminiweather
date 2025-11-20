@@ -5,6 +5,8 @@ run either on CPU (MPI + OpenMP) or on NVIDIA GPUs (MPI + CUDA). It implements a
 2D advection-diffusion stencil with halo exchanges and timing hooks for scaling
 studies. The layout targets coursework on Magic Castle/Alliance clusters using
 Slurm and EESSI modules, with ready-to-use Slurm scripts for 4–8 GPU nodes.
+If CUDA devices are absent at runtime the code automatically falls back to the
+CPU path while retaining MPI+OpenMP behavior.
 
 Key directories:
 - `src/`: C++ source (`miniweather_mpi_omp.cpp`), Makefile, and plotting helper.

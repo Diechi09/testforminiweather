@@ -20,6 +20,7 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <sys/stat.h>
 
 struct Domain {
     int global_nx;
@@ -82,9 +83,7 @@ Options parse_args(int argc, char **argv) {
         } else if (strcmp(argv[i], "--cpu") == 0) {
             opt.use_gpu = false;
         } else if (strcmp(argv[i], "--help") == 0) {
-            if (i == 1 || argv[0]) {
-                std::cout << "Usage: ./miniweather_mpi_omp [--nx N] [--nz N] [--steps N] [--output path] [--gpu|--cpu]\n";
-            }
+            std::cout << "Usage: ./miniweather_mpi_omp [--nx N] [--nz N] [--steps N] [--output path] [--gpu|--cpu]\n";
             MPI_Finalize();
             std::exit(0);
         }
@@ -99,6 +98,13 @@ Options parse_args(int argc, char **argv) {
 inline size_t idx(const Domain &dom, int i, int k) {
     int nx_with_halo = dom.local_nx + 2 * dom.halo;
     return static_cast<size_t>(k) * nx_with_halo + i;
+}
+
+// Utility to check whether an output file already has content to avoid
+// repeatedly writing CSV headers during multi-run experiments.
+bool file_has_content(const std::string &path) {
+    struct stat st {};
+    return (stat(path.c_str(), &st) == 0) && st.st_size > 0;
 }
 
 // Initialize domain decomposition and arrays.
@@ -311,9 +317,16 @@ int main(int argc, char **argv) {
     if (opt.use_gpu) {
         int device_count = 0;
         CUDA_CALL(cudaGetDeviceCount(&device_count));
-        int device_id = dom.rank % (device_count == 0 ? 1 : device_count);
-        CUDA_CALL(cudaSetDevice(device_id));
-        setup_device(dom);
+        if (device_count == 0) {
+            if (dom.rank == 0) {
+                std::fprintf(stderr, "No CUDA devices detected; falling back to CPU path.\n");
+            }
+            opt.use_gpu = false;
+        } else {
+            int device_id = dom.rank % device_count;
+            CUDA_CALL(cudaSetDevice(device_id));
+            setup_device(dom);
+        }
     }
 #endif
 
@@ -351,9 +364,12 @@ int main(int argc, char **argv) {
 #else
         int omp_threads = 1;
 #endif
+        bool header_needed = !file_has_content(opt.output);
         FILE *f = std::fopen(opt.output.c_str(), "a");
         if (f) {
-            std::fprintf(f, "ranks,threads,nx,nz,steps,total_time,time_per_step,mpi_thread_level,use_gpu\n");
+            if (header_needed) {
+                std::fprintf(f, "ranks,threads,nx,nz,steps,total_time,time_per_step,mpi_thread_level,use_gpu\n");
+            }
             std::fprintf(f, "%d,%d,%d,%d,%d,%f,%f,%d,%d\n", dom.size, omp_threads, opt.nx, opt.nz, opt.steps, max_time, max_time / opt.steps, provided, opt.use_gpu ? 1 : 0);
             std::fclose(f);
         } else {

@@ -32,12 +32,12 @@ def _load_csv(path: str) -> List[Dict[str, str]]:
 def _example_rows(mode: str) -> List[Dict[str, str]]:
     if mode == "strong":
         return [
-            {"nodes": "1", "ranks": "4", "threads": "8", "nx": "2048", "nz": "1024", "steps": "200", "total_time": "0.92", "time_per_step": "0.0046", "avg_comm_per_step": "0.0007", "avg_compute_per_step": "0.0037", "comm_fraction": "0.15", "throughput_mcells_s": "455.6", "use_gpu": "1"},
-            {"nodes": "4", "ranks": "16", "threads": "8", "nx": "2048", "nz": "1024", "steps": "200", "total_time": "0.30", "time_per_step": "0.0015", "avg_comm_per_step": "0.0004", "avg_compute_per_step": "0.0011", "comm_fraction": "0.27", "throughput_mcells_s": "1399.5", "use_gpu": "1"},
+            {"ranks": "1", "threads": "8", "nx": "512", "nz": "256", "steps": "50", "total_time": "0.20", "time_per_step": "0.004", "mpi_thread_level": "2", "use_gpu": "1"},
+            {"ranks": "4", "threads": "8", "nx": "512", "nz": "256", "steps": "50", "total_time": "0.08", "time_per_step": "0.0016", "mpi_thread_level": "2", "use_gpu": "1"},
         ]
     return [
-        {"nodes": "1", "ranks": "4", "threads": "8", "nx": "1024", "nz": "1024", "steps": "200", "total_time": "0.48", "time_per_step": "0.0024", "avg_comm_per_step": "0.0006", "avg_compute_per_step": "0.0018", "comm_fraction": "0.25", "throughput_mcells_s": "437.0", "use_gpu": "1"},
-        {"nodes": "4", "ranks": "16", "threads": "8", "nx": "4096", "nz": "1024", "steps": "200", "total_time": "0.53", "time_per_step": "0.00265", "avg_comm_per_step": "0.0008", "avg_compute_per_step": "0.00185", "comm_fraction": "0.30", "throughput_mcells_s": "395.6", "use_gpu": "1"},
+        {"ranks": "1", "threads": "8", "nx": "128", "nz": "256", "steps": "50", "total_time": "0.05", "time_per_step": "0.001", "mpi_thread_level": "2", "use_gpu": "1"},
+        {"ranks": "4", "threads": "8", "nx": "512", "nz": "256", "steps": "50", "total_time": "0.06", "time_per_step": "0.0012", "mpi_thread_level": "2", "use_gpu": "1"},
     ]
 
 
@@ -45,8 +45,6 @@ def _example_rows(mode: str) -> List[Dict[str, str]]:
 def index():
     strong = _load_csv(STRONG_PATH) or _example_rows("strong")
     weak = _load_csv(WEAK_PATH) or _example_rows("weak")
-    strong_cols = list(strong[0].keys()) if strong else []
-    weak_cols = list(weak[0].keys()) if weak else []
     tmpl = """
     <html>
     <head><title>miniWeather Scaling Dashboard</title></head>
@@ -57,14 +55,18 @@ def index():
       <h2>Strong Scaling</h2>
       <img src="/plot/strong.png" alt="Strong scaling plot" width="480" />
       <table border="1" cellpadding="4" cellspacing="0">
-        <tr>{% for key in strong_cols %}<th>{{ key }}</th>{% endfor %}</tr>
-        {% for row in strong %}<tr>{% for key in strong_cols %}<td>{{ row[key] }}</td>{% endfor %}</tr>{% endfor %}
+        <tr><th>ranks</th><th>threads</th><th>nx</th><th>nz</th><th>steps</th><th>total_time</th><th>time_per_step</th><th>use_gpu</th></tr>
+        {% for row in strong %}
+          <tr>{% for key in ['ranks','threads','nx','nz','steps','total_time','time_per_step','use_gpu'] %}<td>{{ row[key] }}</td>{% endfor %}</tr>
+        {% endfor %}
       </table>
       <h2>Weak Scaling</h2>
       <img src="/plot/weak.png" alt="Weak scaling plot" width="480" />
       <table border="1" cellpadding="4" cellspacing="0">
-        <tr>{% for key in weak_cols %}<th>{{ key }}</th>{% endfor %}</tr>
-        {% for row in weak %}<tr>{% for key in weak_cols %}<td>{{ row[key] }}</td>{% endfor %}</tr>{% endfor %}
+        <tr><th>ranks</th><th>threads</th><th>nx</th><th>nz</th><th>steps</th><th>total_time</th><th>time_per_step</th><th>use_gpu</th></tr>
+        {% for row in weak %}
+          <tr>{% for key in ['ranks','threads','nx','nz','steps','total_time','time_per_step','use_gpu'] %}<td>{{ row[key] }}</td>{% endfor %}</tr>
+        {% endfor %}
       </table>
       <p>Launch with <code>python src/frontend.py</code> and open http://127.0.0.1:5000/.</p>
     </body>
@@ -76,7 +78,7 @@ def index():
 def _plot_series(rows: List[Dict[str, str]], mode: str) -> io.BytesIO:
     if not rows:
         rows = _example_rows(mode)
-    x = [int(r.get("nodes") or r.get("ranks")) for r in rows]
+    x = [int(r["ranks"]) for r in rows]
     times = [float(r["time_per_step"]) for r in rows]
     fig, ax = plt.subplots(figsize=(5, 3))
     if mode == "strong":
@@ -87,7 +89,7 @@ def _plot_series(rows: List[Dict[str, str]], mode: str) -> io.BytesIO:
     else:
         ax.plot(x, times, marker="o", label="Time/step")
         ax.set_ylabel("Time per step (s)")
-    ax.set_xlabel("Nodes (or ranks)")
+    ax.set_xlabel("MPI ranks")
     ax.grid(True)
     ax.legend()
     buf = io.BytesIO()

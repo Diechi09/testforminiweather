@@ -24,21 +24,17 @@ def read_csv(path):
 
 
 def plot_strong_scaling(rows):
-    """Plot speedup/efficiency and communication fractions for strong scaling."""
+    """Plot speedup and efficiency for strong scaling experiments."""
     if not rows:
         return
     nodes = [int(r.get("nodes", r.get("ranks", 0))) for r in rows]
     ranks = [int(r.get("ranks", 1)) for r in rows]
     times = [float(r["total_time"]) for r in rows]
-    comm_frac = [float(r.get("comm_fraction", 0.0)) for r in rows]
-    compute = [float(r.get("avg_compute_per_step", 0.0)) for r in rows]
-    comm = [float(r.get("avg_comm_per_step", 0.0)) for r in rows]
-
     baseline = times[0]
     speedup = [baseline / t for t in times]
     efficiency = [s / ranks[i] for i, s in enumerate(speedup)]
 
-    fig, ax = plt.subplots(1, 3, figsize=(15, 4))
+    fig, ax = plt.subplots(1, 2, figsize=(10, 4))
     ax[0].plot(nodes, speedup, marker="o")
     ax[0].set_xlabel("Nodes")
     ax[0].set_ylabel("Speedup")
@@ -50,15 +46,6 @@ def plot_strong_scaling(rows):
     ax[1].set_ylabel("Efficiency (%)")
     ax[1].set_title("Strong scaling efficiency")
     ax[1].grid(True)
-
-    ax[2].plot(nodes, [c * 100 for c in comm_frac], marker="o", label="Comm fraction")
-    ax[2].bar(nodes, [c * 1000 for c in comm], alpha=0.3, label="Comm ms/step")
-    ax[2].bar(nodes, [c * 1000 for c in compute], alpha=0.3, label="Compute ms/step")
-    ax[2].set_xlabel("Nodes")
-    ax[2].set_ylabel("Comm fraction (%) or ms/step")
-    ax[2].set_title("Bottleneck: comm vs compute")
-    ax[2].legend()
-    ax[2].grid(True)
 
     for ext in ["png", "svg"]:
         out = RESULTS_DIR / f"strong_scaling.{ext}"

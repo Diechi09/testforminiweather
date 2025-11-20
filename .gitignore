@@ -1,0 +1,23 @@
+# Build artifacts
+src/miniweather_mpi_omp
+src/miniweather_mpi_cuda
+src/*.o
+
+# Apptainer image
+env/project.sif
+
+# Results and plots (generated)
+results/*.png
+results/*.svg
+results/*.pdf
+results/*.qdrep
+results/*.nsys-rep
+# Keep canonical scaling CSVs under version control for demos
+!results/strong_scaling.csv
+!results/weak_scaling.csv
+
+# Slurm outputs
+*.out
+
+# Python cache
+__pycache__/

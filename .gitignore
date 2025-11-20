@@ -1,0 +1,14 @@
+# Build artifacts
+src/miniweather_mpi_omp
+src/*.o
+
+# Apptainer image
+env/project.sif
+
+# Results and plots (generated)
+results/*.png
+results/*.svg
+results/*.pdf
+
+# Slurm outputs
+*.out

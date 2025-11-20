@@ -1,57 +1,60 @@
-# Reproduce runs on Magic Castle / Alliance clusters (CPU or GPU)
+# Reproducing Experiments
 
-1. **Clone repo**
-   ```bash
-   git clone <repo_url>
-   cd testforminiweather
-   ```
+Follow these steps to rebuild and rerun the miniWeather mini-app on Magic Castle
+or similar Alliance clusters.
 
-2. **Load modules** (adapt names/versions)
-   ```bash
-   source env/load_modules.sh
-   ```
+1. **Clone the repository**
+```bash
+git clone <repo-url>
+cd testforminiweather
+```
 
-3. **Build**
-   - CPU: `cd src && make cpu`
-   - GPU: `cd src && make gpu`
+2. **Load modules or build container**
+- Option A: modules
+```bash
+source env/load_modules.sh  # edit module versions to match your system
+```
+- Option B: Apptainer (optional)
+```bash
+apptainer build env/project.sif env/project.def
+# Then prefix commands with: ./slurm/run.sh <command>
+```
 
-4. **Run a 1-node baseline**
-   - CPU: `srun -n 1 ./miniweather_mpi_omp --nx 256 --nz 128 --steps 50 --output ../results/cpu_baseline.csv`
-   - GPU: `srun -n 1 --gpus-per-task=1 ./miniweather_mpi_cuda --nx 256 --nz 128 --steps 50 --output ../results/gpu_baseline.csv --gpu`
+3. **Build the code**
+```bash
+cd src
+make
+cd ..
+```
 
-5. **Strong-scaling (GPU)**
-   - Submit multiple jobs varying nodes/GPUs:
-     ```bash
-     sbatch slurm/miniweather_strong.sbatch
-     ```
-   - Append rows from `results/strong_<jobid>.csv` into `results/strong_scaling.csv`.
+4. **Run a 1-node baseline** (example with 2 ranks, 4 threads each)
+```bash
+srun -n 2 --cpus-per-task=4 ./miniweather_mpi_omp --nx 256 --nz 128 --steps 50 --output results/baseline.csv
+```
 
-6. **Weak-scaling (GPU)**
-   - Submit jobs with different `-N` to grow total grid size:
-     ```bash
-     sbatch slurm/miniweather_weak.sbatch
-     ```
-   - Append rows into `results/weak_scaling.csv`.
+5. **Strong scaling campaign**
+- Submit `slurm/miniweather_strong.sbatch` with varying `-N` values.
+- After runs finish, concatenate outputs into `results/strong_scaling.csv`.
+
+6. **Weak scaling campaign**
+- Submit `slurm/miniweather_weak.sbatch` with varying `-N` values.
+- Aggregate outputs into `results/weak_scaling.csv`.
 
 7. **Profiling**
-   - Example with Nsight Systems fallback to plain run:
-     ```bash
-     sbatch slurm/profile_cpu.sbatch
-     ```
-   - Store profiler outputs in `results/`.
+- Use `slurm/profile_cpu.sbatch` to collect perf/likwid statistics for a single
+  representative run. Save logs in `results/`.
 
-8. **Plot scaling**
-   ```bash
-   python src/plot_scaling.py
-   ```
+8. **Plot scaling results**
+```bash
+python src/plot_scaling.py
+```
+This generates `strong_scaling.(png|svg)` and `weak_scaling.(png|svg)` under
+`results/`.
 
-9. **Record system info**
-   - Fill `SYSTEM.md` with exact node/CPU/GPU/interconnect/module details.
+9. **Document system details**
+- Fill in `SYSTEM.md` with node architecture, software versions, and environment
+  variables used during runs.
 
-10. **Container option**
-    - Build the Apptainer image: `apptainer build env/project.sif env/project.def`
-    - Run inside container (GPU):
-      ```bash
-      ./slurm/run.sh apptainer exec --nv --bind $PWD:$PWD --pwd $PWD env/project.sif \
-        srun --gpus-per-task=1 ./miniweather_mpi_cuda --nx 256 --nz 128 --steps 50 --output results/gpu_container.csv --gpu
-      ```
+TODOs:
+- Replace `<repo-url>` and `<account>` placeholders with real values.
+- Record exact module versions in env/modules.txt for reproducibility.

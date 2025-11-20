@@ -1,12 +1,16 @@
-#!/usr/bin/env bash
-# Module helper for Magic Castle/Alliance-style clusters.
-# Replace module names with site-specific versions; keep a record for reproducibility.
+#!/bin/bash
+# load_modules.sh
+# Helper to load modules for building/running the miniWeather mini-app on
+# Magic Castle/Alliance clusters. Adjust module names to match env/modules.txt.
 
 module purge
-module load gcc/XX.Y openmpi/XX.Y cuda/YY.Z python/3.X matplotlib/3.X
+module load gcc/XX.Y
+module load openmpi/XX.Y
+module load python/3.X
+module load matplotlib/3.X || true  # ignore if matplotlib comes with python
+module load likwid/XX.Y || true      # optional profiling support
 
-# Set a sensible default for OpenMP threads; override per job if needed.
-export OMP_NUM_THREADS=${OMP_NUM_THREADS:-8}
+# Default to all available cores unless overridden; users can change when using Slurm.
+export OMP_NUM_THREADS=${OMP_NUM_THREADS:-4}
 
-# Optional: export CUDA_VISIBLE_DEVICES if you want to pin ranks manually.
-# export CUDA_VISIBLE_DEVICES=0,1,2,3
+echo "Loaded modules and set OMP_NUM_THREADS=${OMP_NUM_THREADS}"

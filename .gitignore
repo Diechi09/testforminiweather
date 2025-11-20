@@ -1,6 +1,5 @@
 # Build artifacts
 src/miniweather_mpi_omp
-src/miniweather_mpi_cuda
 src/*.o
 
 # Apptainer image
@@ -10,9 +9,6 @@ env/project.sif
 results/*.png
 results/*.svg
 results/*.pdf
-results/*.csv
-results/*.qdrep
-results/*.nsys-rep
 
 # Slurm outputs
 *.out

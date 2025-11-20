@@ -1,0 +1,9 @@
+# modules.txt
+# List of modules commonly available on Alliance/Magic Castle clusters.
+# Replace with exact versions on your system to ensure reproducibility.
+
+gcc/XX.Y
+openmpi/XX.Y
+python/3.X
+matplotlib/3.X  # optional if matplotlib is a separate module
+likwid/XX.Y     # or perf; pick tools available on the cluster
